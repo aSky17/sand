@@ -54,24 +54,19 @@ def compute_parameters(cfg):
 
     params = {}
 
-    # Basic parameters
     params["DATA_WIDTH"] = cfg["data_width"]
     params["MEMORY_SIZE"] = cfg["memory_size"]
 
-    # Memory depth (word based)
     memory_depth = cfg["memory_size"] // cfg["data_width"]
     params["MEMORY_DEPTH"] = memory_depth
 
-    # Address width
     addr_width = math.ceil(math.log2(memory_depth))
     params["ADDR_WIDTH"] = addr_width
 
-    # Port parameters
     params["NUM_PORTS"] = cfg["num_ports"]
     params["NUM_READ_PORTS"] = cfg["read_ports"]
     params["NUM_WRITE_PORTS"] = cfg["write_ports"]
 
-    # Banking parameters
     params["NUM_BANKS"] = cfg["num_banks"]
 
     bank_index_width = math.ceil(math.log2(cfg["num_banks"]))
@@ -79,13 +74,11 @@ def compute_parameters(cfg):
 
     params["BANK_ADDR_WIDTH"] = addr_width - bank_index_width
 
-    # Pipeline decision
     if cfg["clock_frequency"] > 700:
         params["PIPELINE_DEPTH"] = 3
     else:
         params["PIPELINE_DEPTH"] = 1
 
-    # Control parameters
     params["CLOCK_FREQUENCY"] = cfg["clock_frequency"]
     params["ACCESS_PATTERN"] = cfg["access_pattern"]
     params["PRIORITY"] = cfg["priority"]
@@ -102,12 +95,14 @@ def create_result_dirs(arch):
     base = os.path.join(RESULT_DIR, arch)
 
     rtl_dir = os.path.join(base, "rtl")
+    tb_dir = os.path.join(base, "tb")
     report_dir = os.path.join(base, "reports")
 
     os.makedirs(rtl_dir, exist_ok=True)
+    os.makedirs(tb_dir, exist_ok=True)
     os.makedirs(report_dir, exist_ok=True)
 
-    return rtl_dir
+    return rtl_dir, tb_dir, report_dir
 
 
 # -------------------------------------
@@ -118,7 +113,7 @@ def generate_rtl(arch, params):
 
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 
-    rtl_dir = create_result_dirs(arch)
+    rtl_dir, _, _ = create_result_dirs(arch)
 
     template_path = os.path.join(TEMPLATE_DIR, "architectures", arch)
 
@@ -136,14 +131,12 @@ def generate_rtl(arch, params):
 
                 rel_path = os.path.relpath(full_path, TEMPLATE_DIR)
 
-                # Fix Windows path for Jinja
                 rel_path = rel_path.replace("\\", "/")
 
                 template = env.get_template(rel_path)
 
                 output_text = template.render(params)
 
-                # Remove .j2 extension
                 output_filename = os.path.basename(file).replace(".j2", "")
 
                 output_file = os.path.join(rtl_dir, output_filename)
@@ -151,7 +144,97 @@ def generate_rtl(arch, params):
                 with open(output_file, "w") as f:
                     f.write(output_text)
 
-                print("Generated:", output_file)
+                print("Generated RTL:", output_file)
+
+
+# -------------------------------------
+# Generate Testbench
+# -------------------------------------
+
+def generate_testbench(arch, params):
+
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+
+    _, tb_dir, _ = create_result_dirs(arch)
+
+    template = env.get_template("testbench/memory_tb.v.j2")
+
+    output = template.render(params)
+
+    tb_file = os.path.join(tb_dir, f"{arch}_memory_tb.v")
+
+    with open(tb_file, "w") as f:
+        f.write(output)
+
+    print("Generated TB:", tb_file)
+
+
+# -------------------------------------
+# Generate Architecture Report
+# -------------------------------------
+
+def generate_report(arch, cfg, params):
+
+    _, _, report_dir = create_result_dirs(arch)
+
+    report_file = os.path.join(report_dir, "architecture_report.txt")
+
+    with open(report_file, "w") as f:
+
+        f.write("MEMORY ARCHITECTURE REPORT\n")
+        f.write("===========================\n\n")
+
+        f.write("Selected Architecture\n")
+        f.write("---------------------\n")
+        f.write(f"{arch.upper()} MEMORY\n\n")
+
+        f.write("User Inputs\n")
+        f.write("-----------\n")
+
+        for k, v in cfg.items():
+            f.write(f"{k}: {v}\n")
+
+        f.write("\nDerived Parameters\n")
+        f.write("------------------\n")
+
+        for k, v in params.items():
+            f.write(f"{k}: {v}\n")
+
+        f.write("\nArchitecture Explanation\n")
+        f.write("------------------------\n")
+
+        if arch == "replicated":
+            f.write(
+                "Replication was selected because multiple read ports "
+                "are required. Each memory replica supports a read port "
+                "while writes are broadcast to all replicas.\n"
+            )
+
+        elif arch == "banked":
+            f.write(
+                "Banking was selected to improve bandwidth by distributing "
+                "addresses across multiple independent memory banks.\n"
+            )
+
+        elif arch == "pipelined":
+            f.write(
+                "Pipeline stages were inserted to support higher clock "
+                "frequency operation.\n"
+            )
+
+        elif arch == "interleaved":
+            f.write(
+                "Interleaving was selected to improve throughput for "
+                "sequential access patterns.\n"
+            )
+
+        elif arch == "monolithic":
+            f.write(
+                "A single memory block is sufficient for the requested "
+                "configuration.\n"
+            )
+
+    print("Generated Report:", report_file)
 
 
 # -------------------------------------
@@ -172,8 +255,12 @@ def main():
 
     generate_rtl(arch, params)
 
+    generate_testbench(arch, params)
+
+    generate_report(arch, cfg, params)
+
     print("\nResults stored in:")
-    print(f"results/{arch}/")
+    print(f"{RESULT_DIR}/{arch}/")
 
 
 if __name__ == "__main__":
