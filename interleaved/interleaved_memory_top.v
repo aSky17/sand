@@ -1,8 +1,8 @@
 module interleaved_memory_top
 #(
-    parameter DATA_WIDTH = 32,
-    parameter ADDR_WIDTH = 10,
-    parameter NUM_BANKS  = 4
+    parameter DATA_WIDTH = {{DATA_WIDTH}},
+parameter ADDR_WIDTH = {{ADDR_WIDTH}},
+parameter NUM_BANKS  = {{NUM_BANKS}}
 )
 (
     input wire clk,

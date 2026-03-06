@@ -1,7 +1,7 @@
 module read_mux
 #(
-    parameter NUM_BANKS = 4,
-    parameter DATA_WIDTH = 32
+    parameter NUM_BANKS  = {{NUM_BANKS}},
+parameter DATA_WIDTH = {{DATA_WIDTH}}
 )
 (
     input wire [$clog2(NUM_BANKS)-1:0] bank_select,

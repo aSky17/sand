@@ -1,8 +1,8 @@
 module replicated_memory_top
 #(
-    parameter DATA_WIDTH = 32,
-    parameter ADDR_WIDTH = 10,
-    parameter NUM_READ_PORTS = 4
+    parameter DATA_WIDTH      = {{DATA_WIDTH}},
+parameter ADDR_WIDTH      = {{ADDR_WIDTH}},
+parameter NUM_READ_PORTS  = {{NUM_READ_PORTS}}
 )
 (
     input wire clk,

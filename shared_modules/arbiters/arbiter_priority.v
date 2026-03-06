@@ -1,6 +1,6 @@
 module arbiter_priority
 #(
-    parameter N = 4
+    parameter N         = {{N}}
 )
 (
     input  wire [N-1:0] req,

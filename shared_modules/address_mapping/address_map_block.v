@@ -1,7 +1,7 @@
 module address_map_block
 #(
-    parameter ADDR_WIDTH = 16,
-    parameter NUM_BANKS = 4
+    parameter ADDR_WIDTH = {{ADDR_WIDTH}},
+parameter NUM_BANKS  = {{NUM_BANKS}}
 )
 (
     input  wire [ADDR_WIDTH-1:0] addr,

@@ -1,20 +1,20 @@
 module multiport_memory_top #
 (
-parameter MEMORY_SIZE      = 65536,
-parameter DATA_WIDTH       = 32,
-parameter NUM_PORTS        = 4,
-parameter READ_PORTS       = 3,
-parameter WRITE_PORTS      = 1,
+parameter MEMORY_SIZE     = {{MEMORY_SIZE}},
+parameter DATA_WIDTH      = {{DATA_WIDTH}},
+parameter NUM_PORTS       = {{NUM_PORTS}},
+parameter READ_PORTS      = {{READ_PORTS}},
+parameter WRITE_PORTS     = {{WRITE_PORTS}},
 
-parameter PRIORITY_MODE    = 0,
-parameter CLOCK_FREQUENCY  = 500,
-parameter ACCESS_PATTERN   = 0,
+parameter PRIORITY_MODE   = {{PRIORITY_MODE}},
+parameter CLOCK_FREQUENCY = {{CLOCK_FREQUENCY}},
+parameter ACCESS_PATTERN  = {{ACCESS_PATTERN}},
 
-parameter MAX_BANKS        = 4,
-parameter PIPELINE_DEPTH   = 2,
+parameter MAX_BANKS       = {{MAX_BANKS}},
+parameter PIPELINE_DEPTH  = {{PIPELINE_DEPTH}},
 
-parameter ARBITER_TYPE     = 0,
-parameter ADDR_MAP_TYPE    = 0
+parameter ARBITER_TYPE    = {{ARBITER_TYPE}},
+parameter ADDR_MAP_TYPE   = {{ADDR_MAP_TYPE}}
 )
 (
 input clk,

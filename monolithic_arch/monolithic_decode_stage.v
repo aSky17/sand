@@ -1,6 +1,6 @@
 module monolithic_decode_stage
 #(
-    parameter ADDR_WIDTH = 10
+    parameter ADDR_WIDTH = {{ADDR_WIDTH}}
 )
 (
     input clk,

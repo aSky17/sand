@@ -1,7 +1,7 @@
 module pipeline_request_stage
 #(
-    parameter DATA_WIDTH = 32,
-    parameter ADDR_WIDTH = 10
+    parameter DATA_WIDTH = {{DATA_WIDTH}},
+parameter ADDR_WIDTH = {{ADDR_WIDTH}}
 )
 (
     input wire clk,

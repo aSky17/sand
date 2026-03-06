@@ -1,6 +1,6 @@
 module monolithic_output_stage
 #(
-    parameter DATA_WIDTH = 32
+parameter DATA_WIDTH = {{DATA_WIDTH}}
 )
 (
     input clk,

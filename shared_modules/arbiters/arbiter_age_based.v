@@ -1,7 +1,7 @@
 module arbiter_age_based
 #(
-    parameter N = 4,
-    parameter AGE_WIDTH = 8
+    parameter N         = {{N}},
+parameter AGE_WIDTH = {{AGE_WIDTH}}
 )
 (
     input wire clk,

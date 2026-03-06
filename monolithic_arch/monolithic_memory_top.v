@@ -1,7 +1,7 @@
 module monolithic_memory_top
 #(
-    parameter ADDR_WIDTH = 10,
-    parameter DATA_WIDTH = 32
+    parameter ADDR_WIDTH = {{ADDR_WIDTH}},
+parameter DATA_WIDTH = {{DATA_WIDTH}}
 )
 (
     input clk,

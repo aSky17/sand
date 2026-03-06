@@ -1,8 +1,8 @@
 module write_broadcast
 #(
-    parameter NUM_REPLICAS = 4,
-    parameter ADDR_WIDTH = 10,
-    parameter DATA_WIDTH = 32
+    parameter NUM_REPLICAS = {{NUM_REPLICAS}},
+parameter ADDR_WIDTH   = {{ADDR_WIDTH}},
+parameter DATA_WIDTH   = {{DATA_WIDTH}}
 )
 (
     input wire write_enable,
