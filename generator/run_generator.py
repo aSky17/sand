@@ -40,25 +40,25 @@ def select_architecture(cfg):
     pipeline_depth = cfg.get("pipeline_depth", 1)
 
     if clock_frequency >= 800 and pipeline_depth >= 2 and priority == "bandwidth":
-        return "pipelined"
+        return "pipelined", "High clock frequency and bandwidth priority require pipeline stages."
 
     elif read_ports >= 3 and write_ports <= 1 and 300 <= clock_frequency <= 1500 and priority == "latency":
-        return "replicated"
+        return "replicated", "Multiple read ports require replication to avoid read conflicts."
 
     elif num_ports >= 4 and priority in ["latency", "bandwidth"] and clock_frequency >= 500:
-        return "multiport"
+        return "multiport", "High port count requires true multi-port memory."
 
     elif access_pattern == "sequential" and num_banks >= 4 and clock_frequency >= 300 and priority == "bandwidth":
-        return "interleaved"
+        return "interleaved", "Sequential access benefits from bank interleaving."
 
     elif num_ports >= 2 and access_pattern == "random" and num_banks >= 2 and priority in ["bandwidth", "power"]:
-        return "banked"
+        return "banked", "Random accesses with multiple ports benefit from banked architecture."
 
     elif num_ports <= 1 and clock_frequency <= 200:
-        return "monolithic"
+        return "monolithic", "Low port count and low frequency allow simple monolithic memory."
 
     else:
-        return "banked"
+        return "banked", "Default fallback architecture."
 
 # -------------------------------------
 # Compute Parameters
@@ -333,39 +333,301 @@ def generate_testbench(arch, params):
     print("Generated Testbench:", tb_file)
 
 
+
 # -------------------------------------
-# Generate Report
+# Generate Detailed Report
 # -------------------------------------
 
-def generate_report(arch, cfg, params):
+def generate_report(arch, reason, cfg, params):
 
     _, _, report_dir = create_result_dirs(arch)
 
     report_file = os.path.join(report_dir, "architecture_report.txt")
 
+    memory_kb = cfg["memory_size"] / 1024
+    total_bandwidth = cfg["data_width"] * cfg["num_ports"]
+
     with open(report_file, "w") as f:
 
-        f.write("MEMORY ARCHITECTURE REPORT\n")
-        f.write("===========================\n\n")
+        f.write("INTELLIGENT MEMORY ARCHITECTURE GENERATION REPORT\n")
+        f.write("=================================================\n\n")
 
-        f.write("Selected Architecture\n")
-        f.write("---------------------\n")
-        f.write(f"{arch}\n\n")
+        # ----------------------------------------------------
+        # 1. SYSTEM INPUT SPECIFICATION
+        # ----------------------------------------------------
 
-        f.write("User Inputs\n")
-        f.write("-----------\n")
+        f.write("1. SYSTEM INPUT SPECIFICATION\n")
+        f.write("-----------------------------\n\n")
 
-        for k, v in cfg.items():
-            f.write(f"{k}: {v}\n")
+        f.write(f"Total Memory Size : {cfg['memory_size']} bits ({memory_kb:.2f} KB)\n")
+        f.write(f"Data Width        : {cfg['data_width']} bits\n")
+        f.write(f"Total Ports       : {cfg['num_ports']}\n")
+        f.write(f"Read Ports        : {cfg['read_ports']}\n")
+        f.write(f"Write Ports       : {cfg['write_ports']}\n")
+        f.write(f"Clock Frequency   : {cfg['clock_frequency']} MHz\n")
+        f.write(f"Access Pattern    : {cfg['access_pattern']}\n")
+        f.write(f"Priority Goal     : {cfg['priority']}\n")
+        f.write(f"Maximum Banks     : {cfg['num_banks']}\n\n")
 
-        f.write("\nDerived Parameters\n")
-        f.write("------------------\n")
+        f.write("""
+These parameters define the operational constraints and performance targets
+for the generated memory subsystem. The architecture generator analyzes these
+inputs to determine the most suitable memory organization capable of meeting
+performance, bandwidth, and complexity requirements.
+""")
+
+        # ----------------------------------------------------
+        # 2. DERIVED MEMORY PARAMETERS
+        # ----------------------------------------------------
+
+        f.write("\n2. DERIVED MEMORY PARAMETERS\n")
+        f.write("----------------------------\n\n")
 
         for k, v in params.items():
-            f.write(f"{k}: {v}\n")
+            f.write(f"{k:20s}: {v}\n")
 
-    print("Generated Report:", report_file)
+        f.write("\n")
 
+        f.write(f"""
+Memory Depth Calculation
+------------------------
+Memory depth represents the number of addressable memory words.
+
+Formula:
+    MEMORY_DEPTH = MEMORY_SIZE / DATA_WIDTH
+
+Computation:
+    MEMORY_DEPTH = {cfg['memory_size']} / {cfg['data_width']} = {params['MEMORY_DEPTH']} words
+
+
+Address Width Calculation
+-------------------------
+The address width determines the number of bits required to uniquely
+address every word in memory.
+
+Formula:
+    ADDR_WIDTH = ceil(log2(MEMORY_DEPTH))
+
+Computed Address Width:
+    ADDR_WIDTH = {params['ADDR_WIDTH']} bits
+""")
+
+        # ----------------------------------------------------
+        # 3. ARCHITECTURE SELECTION
+        # ----------------------------------------------------
+
+        f.write("\n3. ARCHITECTURE SELECTION\n")
+        f.write("-------------------------\n\n")
+
+        f.write(f"Selected Architecture : {arch.upper()}\n\n")
+
+        f.write("Selection Reason\n")
+        f.write("----------------\n")
+
+        f.write(reason + "\n\n")
+
+        f.write("""
+The architecture selection algorithm evaluates system constraints including
+port count, access patterns, performance priorities, and operating frequency.
+Based on these conditions, it chooses the architecture that best balances
+performance, complexity, and scalability.
+""")
+
+        # ----------------------------------------------------
+        # 4. MEMORY ACCESS CHARACTERISTICS
+        # ----------------------------------------------------
+
+        f.write("\n4. MEMORY ACCESS CHARACTERISTICS\n")
+        f.write("--------------------------------\n\n")
+
+        f.write(f"Total Parallel Ports : {cfg['num_ports']}\n")
+        f.write(f"Estimated Peak Bandwidth : {total_bandwidth} bits per cycle\n\n")
+
+        f.write("""
+Bandwidth Analysis
+------------------
+Peak memory bandwidth is estimated as:
+
+    BANDWIDTH = DATA_WIDTH × NUM_PORTS
+
+This represents the theoretical maximum number of bits that can be
+transferred per clock cycle assuming no bank conflicts or arbitration delays.
+""")
+
+        # ----------------------------------------------------
+        # 5. ALTERNATIVE ARCHITECTURES
+        # ----------------------------------------------------
+
+        f.write("\n5. ALTERNATIVE ARCHITECTURES CONSIDERED\n")
+        f.write("---------------------------------------\n\n")
+
+        alternatives = ["monolithic", "banked", "interleaved", "replicated", "multiport", "pipelined"]
+
+        alternatives.remove(arch)
+
+        for alt in alternatives:
+            f.write(f"- {alt}\n")
+
+        f.write("\n")
+
+        f.write("""
+The generator evaluates several alternative architectures. While these
+architectures may satisfy certain system requirements, they were not selected
+because they provide inferior tradeoffs under the given constraints.
+""")
+
+        # ----------------------------------------------------
+        # 6. ARCHITECTURE TRADEOFF ANALYSIS
+        # ----------------------------------------------------
+
+        f.write("\n6. ARCHITECTURE TRADEOFF ANALYSIS\n")
+        f.write("---------------------------------\n\n")
+
+        if arch == "replicated":
+
+            f.write("""
+Replicated Memory Architecture
+------------------------------
+Multiple identical memory copies are instantiated so that each read port
+can access the memory independently.
+
+Advantages
+- Eliminates read contention
+- Enables simultaneous reads
+- Low read latency
+
+Disadvantages
+- Increased silicon area due to replication
+- Write operations must update all replicas
+""")
+
+        elif arch == "banked":
+
+            f.write("""
+Multi-Bank Memory Architecture
+------------------------------
+Memory is divided into independent banks that can operate concurrently.
+
+Advantages
+- Improves memory bandwidth
+- Enables parallel access
+- Reduces access contention
+
+Disadvantages
+- Bank conflicts may stall operations
+- Requires arbitration logic
+""")
+
+        elif arch == "interleaved":
+
+            f.write("""
+Interleaved Memory Architecture
+-------------------------------
+Sequential memory addresses are distributed across different banks.
+
+Advantages
+- Excellent performance for streaming workloads
+- Improved parallelism
+- Reduced bank conflicts for sequential access
+
+Disadvantages
+- Random accesses may still cause conflicts
+""")
+
+        elif arch == "multiport":
+
+            f.write("""
+Multi-Port Memory Architecture
+------------------------------
+Multiple read/write ports directly access the memory array.
+
+Advantages
+- True simultaneous access
+- High flexibility
+
+Disadvantages
+- High area cost
+- Complex routing and timing
+""")
+
+        elif arch == "pipelined":
+
+            f.write("""
+Pipelined Memory Architecture
+-----------------------------
+Memory access is divided into pipeline stages to increase clock frequency.
+
+Advantages
+- Supports high clock speeds
+- Improved throughput
+
+Disadvantages
+- Increased access latency
+- More complex control logic
+""")
+
+        elif arch == "monolithic":
+
+            f.write("""
+Monolithic Memory Architecture
+------------------------------
+A single unified memory array.
+
+Advantages
+- Minimal area
+- Simple control logic
+- Low power consumption
+
+Disadvantages
+- Limited scalability
+- Low parallelism
+""")
+
+        # ----------------------------------------------------
+        # 7. IMPLEMENTATION DETAILS
+        # ----------------------------------------------------
+
+        f.write("\n7. IMPLEMENTATION DETAILS\n")
+        f.write("-------------------------\n\n")
+
+        f.write("""
+The RTL generated for this architecture includes:
+
+- Parameterized memory bank modules
+- Address mapping logic
+- Arbitration modules
+- Pipeline stages (if required)
+- Testbench for functional verification
+
+All modules are generated from parameterized templates using Jinja2.
+This allows flexible scaling of memory size, port count, and banking
+configuration without modifying the RTL source code manually.
+""")
+
+        # ----------------------------------------------------
+        # 8. SUMMARY
+        # ----------------------------------------------------
+
+        f.write("\n8. SUMMARY\n")
+        f.write("----------\n\n")
+
+        f.write(f"""
+Based on the provided system constraints, the generator selected the
+{arch.upper()} architecture as the most appropriate implementation.
+
+The decision was primarily influenced by:
+
+- Port configuration
+- Access pattern
+- Target clock frequency
+- Performance priority
+
+The generated RTL implements the derived memory depth, address width,
+bank configuration, and pipeline structure necessary to satisfy these
+requirements.
+""")
+
+    print("Generated Detailed Report:", report_file)
 
 # -------------------------------------
 # Main
@@ -375,7 +637,7 @@ def main():
 
     cfg = load_input()
 
-    arch = select_architecture(cfg)
+    arch, reason = select_architecture(cfg)
 
     print("\nSelected Architecture:", arch)
 
@@ -389,7 +651,7 @@ def main():
 
     generate_testbench(arch, params)
 
-    generate_report(arch, cfg, params)
+    generate_report(arch, reason, cfg, params)
 
     print("\nGeneration Completed")
 

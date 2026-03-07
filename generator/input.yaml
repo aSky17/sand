@@ -1,15 +1,15 @@
 memory_size: 1024
 data_width: 8
 
-num_ports: 4
-read_ports: 2
-write_ports: 2
+num_ports: 1
+read_ports: 1
+write_ports: 0
 
-num_banks: 4
+num_banks: 1
 
-clock_frequency: 500
+clock_frequency: 100
 
 priority: latency
 access_pattern: random
 
-N: 4
+N: 1

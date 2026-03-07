@@ -4,8 +4,8 @@ module monolithic_memory_tb;
 
 parameter DATA_WIDTH = 8;
 parameter ADDR_WIDTH = 7;
-parameter NUM_READ_PORTS = 2;
-parameter NUM_WRITE_PORTS = 2;
+parameter NUM_READ_PORTS = 1;
+parameter NUM_WRITE_PORTS = 0;
 
 parameter CLK_PERIOD = 10;
 
